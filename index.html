@@ -86,7 +86,18 @@ button:focus-visible{outline:3px dashed var(--ink); outline-offset:7px}
     const urls = await Promise.all(page.assets.map(async (a) => [a.p, a.u || URL.createObjectURL(new Blob([await open(a.f)], { type: a.t }))]));
     let html = page.html;
     for (const [p, u] of urls) html = html.split(p).join(u); // the page asks for its files by name: hand it the opened copies
-    document.open(); document.write(html); document.close();
+    // swap the letter in for the lock screen. Not document.write: WebKit shows black and crashes on it while a stylesheet loads
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const code = [...doc.scripts].map((s) => { const mark = doc.createComment(''); s.replaceWith(mark); return [mark, s]; });
+    document.documentElement.lang = doc.documentElement.lang;
+    document.head.replaceChildren(...doc.head.childNodes);
+    document.body.replaceWith(doc.body);
+    for (const [mark, s] of code) { // parsed scripts never run: run fresh copies, in order
+      const run = document.createElement('script');
+      for (const a of s.attributes) run.setAttribute(a.name, a.value);
+      run.textContent = s.textContent;
+      mark.replaceWith(run);
+    }
   })().catch((e) => {
     if (e && e.name === 'OperationError') stop("This link's key doesn't fit", 'Open the whole link you were sent ♡');
     else stop("The letter didn't load", 'Check your connection and try again ♡', true);
