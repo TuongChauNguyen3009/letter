@@ -56,8 +56,8 @@ button:focus-visible{outline:3px dashed var(--ink); outline-offset:7px}
     document.body.classList.add('stopped');
     if (retry) { const b = $('seal-retry'); b.hidden = false; b.onclick = () => location.reload(); }
   };
-  const k = location.hash.slice(1);
-  if (!/^[A-Za-z0-9_-]{22}$/.test(k)) return stop('This letter is sealed ♡', 'It only opens with the link you were sent.');
+  const k = (location.hash.match(/^#([A-Za-z0-9_-]{22})(?![A-Za-z0-9_-])/) || [])[1]; // apps may tack tracking text on after the key
+  if (!k) return stop('This letter is sealed ♡', 'It only opens with the link you were sent.');
   if (!(window.crypto && crypto.subtle && window.TextDecoder && window.fetch)) return stop("This browser can't open it", 'Try the link in Safari or Chrome ♡');
   let got = 0;
   const step = (n) => {
